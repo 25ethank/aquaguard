@@ -11,7 +11,7 @@ class PersonDetector:
         Takes a video frame, returns bounding boxes for people only
         Boxes are in the following format: [x1, y1, x2, y2, confidence]
         """
-        results = self.model(frame)
+        results = self.model(frame, classes=[0])
         boxes = []
 
         for result in results:
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
         boxes = detector.detect(frame)
 
-         # Create green box around detected person
+        # Create green boxes around detected people
         for box in boxes:
             x1, y1, x2, y2, conf = box
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
