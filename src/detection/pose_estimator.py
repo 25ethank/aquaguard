@@ -1,26 +1,37 @@
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 import cv2
 import numpy as np
+import urllib.request
+import os
 
 class PoseEstimator:
+    _MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+    _MODEL_PATH = os.path.join(os.path.dirname(__file__), "pose_landmarker.task")
+
     def __init__(self):
-        self.mp_pose = mp.solutions.pose
-        self.mp_draw = mp.solutions.drawing_utils
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
+        if not os.path.exists(self._MODEL_PATH):
+            urllib.request.urlretrieve(self._MODEL_URL, self._MODEL_PATH)
+
+        base_options = python.BaseOptions(model_asset_path=self._MODEL_PATH)
+        options = vision.PoseLandmarkerOptions(
+            base_options=base_options,
+            running_mode=vision.RunningMode.IMAGE,
+            num_poses=1,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
         )
+        self.landmarker = vision.PoseLandmarker.create_from_options(options)
 
     def extract_keypoints(self, frame, bbox=None):
         """
         Extracts 33 body keypoints from a frame.
-        If bbox provided, crop to that region first (for multi-person)
-        Returns array in shape (33, 3): x, y, z coords for all keypoints, none if no pose detected
+        If bbox provided, crop to that region first (for multi-person).
+        Returns array of shape (33, 3): x, y, z coords, or None if no pose detected.
         """
         if bbox:
-            x1, y1, x2, y2 = bbox
+            x1, y1, x2, y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
             pad = 20
             h, w = frame.shape[:2]
             x1 = max(0, x1 - pad)
@@ -31,23 +42,25 @@ class PoseEstimator:
         else:
             roi = frame
 
-        rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)          # Convert to RGB from BGR for mp
-        results = self.pose.process(rgb)
+        rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+        result = self.landmarker.detect(mp_image)
 
-        if not results.pose_landmarks:
+        if not result.pose_landmarks:
             return None
 
         keypoints = []
-        for landmark in results.pose_landmarks.landmark:
+        for landmark in result.pose_landmarks[0]:
             keypoints.append([landmark.x, landmark.y, landmark.z])
 
         return np.array(keypoints)
 
     def draw_skeleton(self, frame, keypoints, bbox=None):
         """
-        Draws skeleton of main body keypoints for visualization
+        Draws skeleton of main body keypoints for visualization.
         """
         connections = [
+            (7, 8), (7, 11), (8, 12),   # head
             (11, 13), (13, 15),         # left arm
             (12, 14), (14, 16),         # right arm
             (11, 12),                   # shoulders
