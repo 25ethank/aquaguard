@@ -60,15 +60,15 @@ class PoseEstimator:
         Draws skeleton of main body keypoints for visualization.
         """
         connections = [
-            (7, 8), (7, 11), (8, 12),   # head
-            (11, 13), (13, 15),         # left arm
-            (12, 14), (14, 16),         # right arm
-            (11, 12),                   # shoulders
-            (23, 24),                   # hips
-            (11, 23), (12, 24),         # torso
-            (23, 25), (25, 27),         # left leg
-            (24, 26), (26, 28),         # right leg
-            (27, 31), (28, 32)          # feet
+            (0, 7), (0, 8), (7, 11), (8, 12),   # head
+            (11, 13), (13, 15),                 # left arm
+            (12, 14), (14, 16),                 # right arm
+            (11, 12),                           # shoulders
+            (23, 24),                           # hips
+            (11, 23), (12, 24),                 # torso
+            (23, 25), (25, 27),                 # left leg
+            (24, 26), (26, 28),                 # right leg
+            (27, 31), (28, 32)                  # feet
         ]
 
         if bbox:
