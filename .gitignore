@@ -218,3 +218,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 *.task
+
+*.mp4
+*.mov
+*.avi
+*.DS_Store
+data/raw_videos/
