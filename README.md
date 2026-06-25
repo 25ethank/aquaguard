@@ -7,7 +7,7 @@ Real-time drowning detection using computer vision and deep learning.
 
 I'm building a system that monitors a pool camera feed, detects every swimmer simultaneously, and alerts a lifeguard within seconds if someone shows signs of drowning.
 
-I've played water polo and swam competitively for 10+ years and spent 4 years as a lifeguard. I know what drowning actually looks like, and how easy it is to miss in a crowded pool. At my internship at Guident, I work on real-time AI monitoring systems for autonomous vehicles where AI flags anomalies and a human intervenes, keeping the human-in-the-loop. The same idea applies directly to pool safety, so combining my experiences, I built it.
+I've been a competitive swimmer and water polo player for 10+ years and certified lifeguard for 4 years. I know what drowning actually looks like, and how easy it is to miss in a crowded pool. At my internship at Guident, I work on real-time AI monitoring systems for autonomous vehicles where AI flags anomalies and a human intervenes, keeping the human-in-the-loop. The same idea applies directly to pool safety, so combining my experiences, I built it.
 
 ---
 
