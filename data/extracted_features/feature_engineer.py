@@ -26,3 +26,10 @@ class FeatureEngineer:
         Takes a sequence of keypoints arrays (window_size x 33 x 3)
         Returns a feature vector for ML classification
         """
+        features = {}
+
+        # Head Position - below water line?
+        head_y_positions = [kp[NOSE][1] for kp in keypoint_sequence]
+        features["head_y_mean"] = np.mean(head_y_positions)
+        features["head_y_std"] = np.std(head_y_positions)
+        features["head_y_trend"] = np.polyfit(range(len(head_y_positions)), head_y_positions, 1)[0]
