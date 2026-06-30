@@ -41,6 +41,11 @@ class FeatureEngineer:
         features['left_wrist_freq'] = self._count_direction_changes(left_wrist_y)
         features['right_wrist_freq'] = self._count_direction_changes(right_wrist_y)
 
+        # Arm Symmetry - drowning = asymmetric arm movement
+        left_wrist_positions = [(kp[LEFT_WRIST][0], kp[LEFT_WRIST][1]) for kp in keypoint_sequence]
+        right_wrist_positions = [(kp[RIGHT_WRIST][0], kp[RIGHT_WRIST][1]) for kp in keypoint_sequence]
+        features['arm_symmetry'] = self._compute_symmetry(left_wrist_positions, right_wrist_positions)
+
     def _count_direction_changes(self, sequence):
         """
         Count how many times movement direction reverses
@@ -50,3 +55,12 @@ class FeatureEngineer:
             if (sequence[i] - sequence[i-1]) * (sequence[i+1] - sequence[i]) < 0:
                 changes += 1
         return changes
+
+    def _compute_symmetry(self, left_positions, right_positions):
+        """
+        Returns 0-1 score where 1 = perfectly symmetric, 0 = completely asymmetric
+        """
+        left_arr = np.array(left_positions)
+        right_arr = np.array(right_positions)
+        diff = np.abs(left_arr - right_arr)
+        return 1 - np.clip(np.mean(diff), 0, 1)
