@@ -46,6 +46,11 @@ class FeatureEngineer:
         right_wrist_positions = [(kp[RIGHT_WRIST][0], kp[RIGHT_WRIST][1]) for kp in keypoint_sequence]
         features['arm_symmetry'] = self._compute_symmetry(left_wrist_positions, right_wrist_positions)
 
+        # Vertical Displacement - sinking?
+        center_y = [(kp[LEFT_HIP][1] + kp[RIGHT_HIP][1]) / 2 for kp in keypoint_sequence]
+        features['vertical_displacement'] = center_y[-1] - center_y[0]
+        features['vertical_velocity_mean'] = np.mean(np.diff(center_y))
+
     def _count_direction_changes(self, sequence):
         """
         Count how many times movement direction reverses
