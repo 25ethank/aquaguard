@@ -51,6 +51,22 @@ class FeatureEngineer:
         features['vertical_displacement'] = center_y[-1] - center_y[0]
         features['vertical_velocity_mean'] = np.mean(np.diff(center_y))
 
+        # Body Angle - drowning = vertical, swimming = horizontal
+        body_angles = []
+        for kp in keypoints_sequence:
+            shoulder_mid_x = (kp[LEFT_SHOULDER][0] + kp[RIGHT_SHOULDER][0]) / 2
+            shoulder_mid_y = (kp[LEFT_SHOULDER][1] + kp[RIGHT_SHOULDER][1]) / 2
+            hip_mid_x = (kp[LEFT_HIP][0] + kp[RIGHT_HIP][0]) / 2
+            hip_mid_y = (kp[LEFT_HIP][1] + kp[RIGHT_HIP][1]) / 2
+
+            dx = hip_mid_x - shoulder_mid_x
+            dy = hip_mid_y - shoulder_mid_y
+            angle = np.degrees(np.arctan2(dy, dx))
+            body_angles.append(angle)
+
+        features['body_angle_mean'] = np.mean(body_angles)
+        features['body_angle_std'] = np.std(body_angles)
+
     def _count_direction_changes(self, sequence):
         """
         Count how many times movement direction reverses
