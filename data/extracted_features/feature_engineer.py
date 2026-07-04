@@ -66,6 +66,11 @@ class FeatureEngineer:
         features['body_angle_mean'] = np.mean(body_angles)
         features['body_angle_std'] = np.std(body_angles)
 
+        # Leg movement - drowning = minimal kick
+        la_y = kps[:, LEFT_ANKLE, 1]
+        ra_y = kps[:, RIGHT_ANKLE, 1]
+        features['leg_activity'] = (np.std(la_y) + np.std(ra_y)) / 2
+
     def _count_direction_changes(self, sequence):
         """
         Count how many times movement direction reverses
