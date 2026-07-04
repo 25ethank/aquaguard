@@ -3,47 +3,46 @@ import pandas as pd
 
 # MediaPipe indices
 NOSE = 0
-LEFT_SHOULDER = 11
-RIGHT_SHOULDER = 12
-LEFT_ELBOW = 13
-RIGHT_ELBOW = 14
-LEFT_WRIST = 15
-RIGHT_WRIST = 16
-LEFT_HIP = 23
-RIGHT_HIP = 24
-LEFT_KNEE = 25
-RIGHT_KNEE = 26
+LEFT_EAR, RIGHT_EAR = 7, 8
+LEFT_SHOULDER, RIGHT_SHOULDER = 11, 12
+LEFT_ELBOW, RIGHT_ELBOW = 13, 14
+LEFT_WRIST, RIGHT_WRIST = 15, 16
+LEFT_HIP, RIGHT_HIP = 23, 24
+LEFT_KNEE, RIGHT_KNEE = 25, 26
+LEFT_ANKLE, RIGHT_ANKLE = 27, 28
 
 class FeatureEngineer:
-    def __init__(self, window_size=90):
-        """
-        window_size: number of frames to analyze at once
-        """
+    """
+    Converts a sequence of pose keypoints into biomechanical features that distinguish normal swimming, distress, and drowning
+    """
+    def __init__(self, window_size=90, fps=30):
         self.window_size = window_size
+        self.fps = fps
 
     def extract_features(self, keypoint_sequence):
         """
-        Takes a sequence of keypoints arrays (window_size x 33 x 3)
+        Takes a sequence of pose keypoints arrays (window_size x 33 x 3)
         Returns a feature vector for ML classification
         """
         features = {}
+        kps = np.array(keypoint_sequence)
 
         # Head Position - below water line?
-        head_y_positions = [kp[NOSE][1] for kp in keypoint_sequence]
+        head_y_positions = kps[:, NOSE, 1]
         features["head_y_mean"] = np.mean(head_y_positions)
         features["head_y_std"] = np.std(head_y_positions)
         features["head_y_trend"] = np.polyfit(range(len(head_y_positions)), head_y_positions, 1)[0]
 
         # Arm Movement Frequency - thrashing = high frewuency
-        left_wrist_y = [kp[LEFT_WRIST][1] for kp in keypoint_sequence]
-        right_wrist_y = [kp[RIGHT_WRIST][1] for kp in keypoint_sequence]
+        left_wrist_y = kps[:, LEFT_WRIST, 1]
+        right_wrist_y = kps[:, RIGHT_WRIST, 1]
         # Count direction changes
         features['left_wrist_freq'] = self._count_direction_changes(left_wrist_y)
         features['right_wrist_freq'] = self._count_direction_changes(right_wrist_y)
 
         # Arm Symmetry - drowning = asymmetric arm movement
-        left_wrist_positions = [(kp[LEFT_WRIST][0], kp[LEFT_WRIST][1]) for kp in keypoint_sequence]
-        right_wrist_positions = [(kp[RIGHT_WRIST][0], kp[RIGHT_WRIST][1]) for kp in keypoint_sequence]
+        left_wrist_positions = kps[:, LEFT_WRIST, :2]
+        right_wrist_positions = kps[:, RIGHT_WRIST, :2]
         features['arm_symmetry'] = self._compute_symmetry(left_wrist_positions, right_wrist_positions)
 
         # Vertical Displacement - sinking?
@@ -53,7 +52,7 @@ class FeatureEngineer:
 
         # Body Angle - drowning = vertical, swimming = horizontal
         body_angles = []
-        for kp in keypoints_sequence:
+        for kp in keypoint_sequence:
             shoulder_mid_x = (kp[LEFT_SHOULDER][0] + kp[RIGHT_SHOULDER][0]) / 2
             shoulder_mid_y = (kp[LEFT_SHOULDER][1] + kp[RIGHT_SHOULDER][1]) / 2
             hip_mid_x = (kp[LEFT_HIP][0] + kp[RIGHT_HIP][0]) / 2
