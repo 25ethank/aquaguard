@@ -46,9 +46,10 @@ class FeatureEngineer:
         features['arm_symmetry'] = self._compute_symmetry(left_wrist_positions, right_wrist_positions)
 
         # Vertical Displacement - sinking?
-        center_y = [(kp[LEFT_HIP][1] + kp[RIGHT_HIP][1]) / 2 for kp in keypoint_sequence]
+        center_y = (kps[:, LEFT_HIP, 1] + kps[:, RIGHT_HIP, 1]) / 2
         features['vertical_displacement'] = center_y[-1] - center_y[0]
         features['vertical_velocity_mean'] = np.mean(np.diff(center_y))
+        features['vertical_bobbing'] = self._direction_changes(center_y)
 
         # Body Angle - drowning = vertical, swimming = horizontal
         shoulder_mid = (kps[:, LEFT_SHOULDER, :2] + kps[:, RIGHT_SHOULDER, :2]) / 2
@@ -64,15 +65,10 @@ class FeatureEngineer:
         ra_y = kps[:, RIGHT_ANKLE, 1]
         features['leg_activity'] = (np.std(la_y) + np.std(ra_y)) / 2
 
-    def _count_direction_changes(self, sequence):
-        """
-        Count how many times movement direction reverses
-        """
-        changes = 0
-        for i in range(1, len(sequence) - 1):
-            if (sequence[i] - sequence[i-1]) * (sequence[i+1] - sequence[i]) < 0:
-                changes += 1
-        return changes
+    def _direction_changes(self, seq):
+        diffs = np.diff(seq)
+        signs = np.sign(diffs)
+        return int(np.sum(signs[1:] != signs[:-1]))
 
     def _compute_symmetry(self, left_positions, right_positions):
         """
