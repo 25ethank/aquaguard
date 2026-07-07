@@ -51,20 +51,13 @@ class FeatureEngineer:
         features['vertical_velocity_mean'] = np.mean(np.diff(center_y))
 
         # Body Angle - drowning = vertical, swimming = horizontal
-        body_angles = []
-        for kp in keypoint_sequence:
-            shoulder_mid_x = (kp[LEFT_SHOULDER][0] + kp[RIGHT_SHOULDER][0]) / 2
-            shoulder_mid_y = (kp[LEFT_SHOULDER][1] + kp[RIGHT_SHOULDER][1]) / 2
-            hip_mid_x = (kp[LEFT_HIP][0] + kp[RIGHT_HIP][0]) / 2
-            hip_mid_y = (kp[LEFT_HIP][1] + kp[RIGHT_HIP][1]) / 2
-
-            dx = hip_mid_x - shoulder_mid_x
-            dy = hip_mid_y - shoulder_mid_y
-            angle = np.degrees(np.arctan2(dy, dx))
-            body_angles.append(angle)
-
-        features['body_angle_mean'] = np.mean(body_angles)
-        features['body_angle_std'] = np.std(body_angles)
+        shoulder_mid = (kps[:, LEFT_SHOULDER, :2] + kps[:, RIGHT_SHOULDER, :2]) / 2
+        hip_mid = (kps[:, LEFT_HIP, :2] + kps[:, RIGHT_HIP, :2]) / 2
+        d = hip_mid - shoulder_mid
+        angles = np.degrees(np.arctan2(np.abs(d[:, 1]), np.abs(d[:, 0]) + 1e-6))
+        features['body_angle_mean'] = np.mean(angles)
+        features['body_angle_std'] = np.std(angles)
+        features['body_vertical_ratio'] = np.mean(angles > 60)
 
         # Leg movement - drowning = minimal kick
         la_y = kps[:, LEFT_ANKLE, 1]
