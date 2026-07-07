@@ -28,22 +28,25 @@ class FeatureEngineer:
         kps = np.array(keypoint_sequence)
 
         # Head Position - below water line?
-        head_y_positions = kps[:, NOSE, 1]
-        features["head_y_mean"] = np.mean(head_y_positions)
-        features["head_y_std"] = np.std(head_y_positions)
-        features["head_y_trend"] = np.polyfit(range(len(head_y_positions)), head_y_positions, 1)[0]
+        head_y = kps[:, NOSE, 1]
+        features["head_y_mean"] = np.mean(head_y)
+        features["head_y_std"] = np.std(head_y)
+        features["head_y_trend"] = np.polyfit(np.arrange(len(head_y)), head_y, 1)[0]
 
         # Arm Movement Frequency - thrashing = high frewuency
-        left_wrist_y = kps[:, LEFT_WRIST, 1]
-        right_wrist_y = kps[:, RIGHT_WRIST, 1]
+        lw_y = kps[:, LEFT_WRIST, 1]
+        rw_y = kps[:, RIGHT_WRIST, 1]
         # Count direction changes
-        features['left_wrist_freq'] = self._count_direction_changes(left_wrist_y)
-        features['right_wrist_freq'] = self._count_direction_changes(right_wrist_y)
+        features['left_wrist_freq'] = self._direction_changes(lw_y)
+        features['right_wrist_freq'] = self._direction_changes(rw_y)
 
         # Arm Symmetry - drowning = asymmetric arm movement
-        left_wrist_positions = kps[:, LEFT_WRIST, :2]
-        right_wrist_positions = kps[:, RIGHT_WRIST, :2]
-        features['arm_symmetry'] = self._compute_symmetry(left_wrist_positions, right_wrist_positions)
+        lw = kps[:, LEFT_WRIST, :2]
+        rw = kps[:, RIGHT_WRIST, :2]
+        mid_x = (kps[:, LEFT_SHOULDER, 0] + kps[:, RIGHT_SHOULDER, 0]) / 2
+        rw_mirrored = rw.copy()
+        rw_mirrored[:, 0] = 2 * mid_x - rw[:, 0]
+        features['arm_symmetry'] = 1 - np.clip(np.mean(np.abs(lw - rw_mirrored)), 0, 1)
 
         # Vertical Displacement - sinking?
         center_y = (kps[:, LEFT_HIP, 1] + kps[:, RIGHT_HIP, 1]) / 2
@@ -69,12 +72,3 @@ class FeatureEngineer:
         diffs = np.diff(seq)
         signs = np.sign(diffs)
         return int(np.sum(signs[1:] != signs[:-1]))
-
-    def _compute_symmetry(self, left_positions, right_positions):
-        """
-        Returns 0-1 score where 1 = perfectly symmetric, 0 = completely asymmetric
-        """
-        left_arr = np.array(left_positions)
-        right_arr = np.array(right_positions)
-        diff = np.abs(left_arr - right_arr)
-        return 1 - np.clip(np.mean(diff), 0, 1)
