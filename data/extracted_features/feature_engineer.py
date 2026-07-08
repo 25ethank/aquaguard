@@ -48,6 +48,12 @@ class FeatureEngineer:
         rw_mirrored[:, 0] = 2 * mid_x - rw[:, 0]
         features['arm_symmetry'] = 1 - np.clip(np.mean(np.abs(lw - rw_mirrored)), 0, 1)
 
+        # Wrists above shoulders
+        shoulder_y = (kps[:, LEFT_SHOULDER, 1] + kps[:, RIGHT_SHOULDER, 1]) / 2
+        wrist_y = (lw_y + rw_y) / 2
+        features['wrist_above_shoulder_ratio'] = np.mean(wrist_y < shoulder_y)
+
+
         # Vertical Displacement - sinking?
         center_y = (kps[:, LEFT_HIP, 1] + kps[:, RIGHT_HIP, 1]) / 2
         features['vertical_displacement'] = center_y[-1] - center_y[0]
