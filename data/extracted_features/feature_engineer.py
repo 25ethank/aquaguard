@@ -53,6 +53,10 @@ class FeatureEngineer:
         wrist_y = (lw_y + rw_y) / 2
         features['wrist_above_shoulder_ratio'] = np.mean(wrist_y < shoulder_y)
 
+        # Lateral arm spread (drowning = arms pressing out/down, not forward)
+        wrist_spread = np.abs(kps[:, LEFT_WRIST, 0] - kps[:, RIGHT_WRIST, 0])
+        shoulder_spread = np.abs(kps[:, LEFT_SHOULDER, 0] - kps[:, RIGHT_SHOULDER, 0]) + 1e-6
+        features['arm_spread_ratio'] = np.mean(wrist_spread / shoulder_spread)
 
         # Vertical Displacement - sinking?
         center_y = (kps[:, LEFT_HIP, 1] + kps[:, RIGHT_HIP, 1]) / 2
