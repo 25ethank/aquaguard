@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 # MediaPipe indices
 NOSE = 0
@@ -31,7 +30,7 @@ class FeatureEngineer:
         head_y = kps[:, NOSE, 1]
         features["head_y_mean"] = np.mean(head_y)
         features["head_y_std"] = np.std(head_y)
-        features["head_y_trend"] = np.polyfit(np.arrange(len(head_y)), head_y, 1)[0]
+        features["head_y_trend"] = np.polyfit(np.arange(len(head_y)), head_y, 1)[0]
 
         # Arm Movement Frequency - thrashing = high frewuency
         lw_y = kps[:, LEFT_WRIST, 1]
@@ -77,6 +76,8 @@ class FeatureEngineer:
         la_y = kps[:, LEFT_ANKLE, 1]
         ra_y = kps[:, RIGHT_ANKLE, 1]
         features['leg_activity'] = (np.std(la_y) + np.std(ra_y)) / 2
+
+        return features
 
     def _direction_changes(self, seq):
         diffs = np.diff(seq)
