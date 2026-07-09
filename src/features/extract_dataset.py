@@ -63,3 +63,20 @@ def process_segment(video_path, start_frame, end_frame, label, detector, pose, f
 
     cap.release()
     return rows
+
+if __name__ == "__main__":
+    labels = pd.read_csv('data/extracted_features/labels.csv')
+    detector, pose, fe = PersonDetector(), PoseEstimator(), FeatureEngineer()
+
+    all_rows = []
+    for _, r in labels.iterrows():
+        path = f"data/raw_videos/{r['video_file']}"
+        print(f"Processing {r['video_file']} [{r['start_frame']} - {r['end_frame']}] as {r['label']}")
+        rows = process_segment(path, int(r['start_frame']), int(r['end_frame']), r['label'], detector, pose, fe)
+        print(f"{len(rows)} samples")
+        all_rows.extend(rows)
+
+        df = pd.DataFrame(all_rows)
+        df.to_csv('data/extracted_features/features.csv', index=False)
+        print(f"\nTotal: {len(df)} samples")
+        print(df['label'].value_counts)
