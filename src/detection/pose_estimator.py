@@ -8,7 +8,9 @@ import os
 
 class PoseEstimator:
     _MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
-    _MODEL_PATH = os.path.join(os.path.dirname(__file__), "pose_landmarker.task")
+    _MODEL_PATH = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        'data', 'models', 'pose_landmarker.task')
 
     def __init__(self):
         if not os.path.exists(self._MODEL_PATH):

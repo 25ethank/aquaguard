@@ -1,10 +1,13 @@
 from ultralytics import YOLO
 import cv2
+import os
 
 class PersonDetector:
     def __init__(self):
         # Use nano model for fast detection
-        self.model = YOLO('yolov8s.pt')
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        model_path = os.path.join(project_root, 'data', 'models', 'yolov8n.pt')
+        self.model = YOLO(model_path)
 
     def detect(self, frame):
         """
