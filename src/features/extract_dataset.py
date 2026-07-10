@@ -57,6 +57,7 @@ def process_segment(video_path, start_frame, end_frame, label, detector, pose, f
             feats = fe.extract_features(buffer[:WINDOW])
             feats['label'] = label
             feats['source'] = f"{video_path}:{frame_idx}"
+            rows.append(feats)
             buffer = buffer[STRIDE:]
 
         frame_idx += 1
@@ -76,7 +77,7 @@ if __name__ == "__main__":
         print(f"{len(rows)} samples")
         all_rows.extend(rows)
 
-        df = pd.DataFrame(all_rows)
-        df.to_csv('data/extracted_features/features.csv', index=False)
-        print(f"\nTotal: {len(df)} samples")
-        print(df['label'].value_counts)
+    df = pd.DataFrame(all_rows)
+    df.to_csv('data/extracted_features/features.csv', index=False)
+    print(f"\nTotal: {len(df)} samples")
+    print(df['label'].value_counts())

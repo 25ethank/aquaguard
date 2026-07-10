@@ -4,7 +4,7 @@ import cv2
 class PersonDetector:
     def __init__(self):
         # Use nano model for fast detection
-        self.model = YOLO('yolov8n.pt')
+        self.model = YOLO('yolov8s.pt')
 
     def detect(self, frame):
         """
@@ -18,10 +18,11 @@ class PersonDetector:
             for box in result.boxes:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 conf = box.conf[0].item()
-                if conf > 0.5: # Filter if not confident
+                if conf > 0.3:
                     boxes.append([int(x1), int(y1), int(x2), int(y2), conf])
         return boxes
 
+# Test
 if __name__ == "__main__":
     detector = PersonDetector()
     cap = cv2.VideoCapture(0)   # webcam
