@@ -9,7 +9,7 @@ from src.detection.pose_estimator import PoseEstimator
 detector = PersonDetector()
 pose_estimator = PoseEstimator()
 
-cap = cv2.VideoCapture('data/raw_videos/progression.mp4')           # webcam
+cap = cv2.VideoCapture('data/raw_videos/film4.mp4')           # webcam
 
 while True:
     ret, frame = cap.read()
