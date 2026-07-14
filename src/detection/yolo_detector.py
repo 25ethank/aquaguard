@@ -7,7 +7,7 @@ class PersonDetector:
         # Use nano model for fast detection
         #project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         #model_path = os.path.join(project_root, 'data', 'models', 'yolov8n.pt')
-        self.model = YOLO('yolov8m.pt')
+        self.model = YOLO('yolo26s.pt')
 
     def detect(self, frame):
         """

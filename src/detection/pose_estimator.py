@@ -21,8 +21,8 @@ class PoseEstimator:
             base_options=base_options,
             running_mode=vision.RunningMode.IMAGE,
             num_poses=1,
-            min_pose_detection_confidence=0.3,
-            min_pose_presence_confidence=0.3,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
         )
         self.landmarker = vision.PoseLandmarker.create_from_options(options)
 
