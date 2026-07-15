@@ -8,7 +8,7 @@ from src.detection.yolo_detector import PersonDetector
 from src.detection.pose_estimator import PoseEstimator
 from src.features.feature_engineer import FeatureEngineer
 
-WINDOW = 90
+WINDOW = 60
 STRIDE = 15
 
 def largest_box(boxes):
