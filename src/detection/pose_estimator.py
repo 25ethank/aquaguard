@@ -53,7 +53,7 @@ class PoseEstimator:
 
         keypoints = []
         for landmark in result.pose_landmarks[0]:
-            keypoints.append([landmark.x, landmark.y, landmark.z])
+            keypoints.append([landmark.x, landmark.y, landmark.z, landmark.visibility])
 
         return np.array(keypoints)
 
