@@ -73,9 +73,15 @@ class FeatureEngineer:
         features['body_vertical_ratio'] = np.mean(angles > 60)
 
         # Leg movement - drowning = minimal kick
-        la_y = kps[:, LEFT_ANKLE, 1]
-        ra_y = kps[:, RIGHT_ANKLE, 1]
-        features['leg_activity'] = (np.std(la_y) + np.std(ra_y)) / 2
+        VIS_THRESH = 0.5
+        la_vis = kps[:, LEFT_ANKLE, 3] > VIS_THRESH
+        ra_vis = kps[:, RIGHT_ANKLE, 3] > VIS_THRESH
+
+        if la_vis.sum() > 10 and ra_vis.sum() > 10:
+            features['leg_activity'] = (np.std(kps[la_vis, LEFT_ANKLE, 1]) +
+                                        np.std(kps[ra_vis, RIGHT_ANKLE, 1])) / 2
+        else:
+            features['leg_activity'] = np.nan
 
         return features
 
