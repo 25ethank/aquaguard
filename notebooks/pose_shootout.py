@@ -4,7 +4,7 @@ from ultralytics import YOLO
 
 model = YOLO('yolo26m-pose.pt')
 
-VIDEO = 'data/raw_videos/flim1.mp4'
+VIDEO = 'data/raw_videos/flim20.mp4'
 START_FRAME = 0
 
 # COCO-17 skeleton connections
