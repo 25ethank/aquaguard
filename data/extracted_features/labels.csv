@@ -1,7 +1,5 @@
 ﻿video_file,start_frame,end_frame,label
 distress1.mp4,300,525,distress
-progression.mp4,400,975,distress
-progression.mp4,976,99999,drowning
 normal_swimming.mp4,748,1680,normal
 normal_swimming.mp4,2071,2326,normal
 normal_swimming.mp4,2659,2975,normal
@@ -32,3 +30,15 @@ film12.mp4,272,407,drowning
 film13.mp4,76,760,distress
 film14.mp4,27,123,distress
 film14.mp4,155,409,distress
+film16.mp4,16,364,distress
+film17.mp4,12,1111,distress
+film18.mp4,49,746,drowning
+film19.mp4,65,285,drowning
+film20.mp4,34,456,drowning
+film21.mp4,14,386,distress
+film22.mp4,24,437,distress
+film23.mp4,0,287,drowning
+film26.mp4,37,574,drowning
+film27.mp4,33,320,distress
+film28.mp4,16,676,distress
+film29.mp4,55,646,drowning

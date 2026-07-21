@@ -4,14 +4,14 @@ from ultralytics import YOLO
 
 model = YOLO('yolo26m-pose.pt')
 
-VIDEO = 'data/raw_videos/flim20.mp4'
+VIDEO = 'data/raw_videos/progression.mp4'
 START_FRAME = 0
 
 # COCO-17 skeleton connections
 EDGES = [(5,7),(7,9),(6,8),(8,10),(5,6),(11,12),(5,11),(6,12),
          (11,13),(13,15),(12,14),(14,16),(0,3),(0,4),(3,5),(4,6)]
 
-cap = cv2.VideoCapture(VIDEO)
+cap = cv2.VideoCapture('data/raw_videos/progression.mp4')
 cap.set(cv2.CAP_PROP_POS_FRAMES, START_FRAME)
 detected, total = 0, 0
 
