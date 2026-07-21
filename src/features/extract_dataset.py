@@ -4,31 +4,24 @@ import numpy as np
 import sys
 sys.path.append('.')
 
-from src.detection.yolo_detector import PersonDetector
-from src.detection.pose_estimator import PoseEstimator
+from src.detection.yolo_pose_estimator import PoseEstimator
 from src.features.feature_engineer import FeatureEngineer
 
 WINDOW = 60
 STRIDE = 15
 
-def largest_box(boxes):
-    """
-    Pick most prominent person (largest area) - assumes subject is main figure
-    """
-    return max(boxes, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
-
-def process_segment(video_path, start_frame, end_frame, label, detector, pose, fe):
+def process_segment(video_path, start_frame, end_frame, label, pose, fe):
     """
     Processes one labeled video segment into training samples.
 
-    Runs detection + pose estimation frame by frame, then slides a 90-frame windo (stride 15)
+    Runs detection + pose estimation frame by frame, then slides a 60-frame window (stride 15)
     across buffered keypoints to extract overlapping feature vectors
 
     Args:
         video_path: path to video file
         start_frame, end_frame: labeled segment range (inclusive)
         label: ground-truth class ('normal', 'distress', 'drowning')
-        detector, pose, fe: pipeline instances (reused across calls)
+        pose, fe: pipeline instances (reused across calls)
 
     Returns:
         List of feature dicts, each tagged with 'label' and 'source'
@@ -48,8 +41,7 @@ def process_segment(video_path, start_frame, end_frame, label, detector, pose, f
 
         boxes = detector.detect(frame)
         if boxes:
-            box = largest_box(boxes)
-            kp = pose.extract_keypoints(frame, bbox=box[:4])
+            kp = pose.extract_keypoints(frame)
             if kp is not None:
                 buffer.append(kp)
 
@@ -67,7 +59,7 @@ def process_segment(video_path, start_frame, end_frame, label, detector, pose, f
 
 if __name__ == "__main__":
     labels = pd.read_csv('data/extracted_features/labels.csv')
-    detector, pose, fe = PersonDetector(), PoseEstimator(), FeatureEngineer()
+    pose, fe = PoseEstimator(), FeatureEngineer()
 
     all_rows = []
     for _, r in labels.iterrows():

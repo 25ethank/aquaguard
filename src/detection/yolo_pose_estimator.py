@@ -37,7 +37,7 @@ class PoseEstimator:
         self.model = YOLO(path if os.path.exists(path) else model_name)
         self.conf_threshold = conf_threshold
 
-    def _parse(self, result, frame_shape, with_ids=False):
+    def _parse(self, result, with_ids=False):
         """Turn a YOLO result into a list of person dicts."""
         people = []
         if result.keypoints is None or result.boxes is None or len(result.boxes) == 0:
@@ -64,3 +64,64 @@ class PoseEstimator:
             people.append(person)
 
         return people
+
+    def detect_all(self, frame):
+        """All people in frame, with keypoints. Used by extraction."""
+        r = self.model(frame, classes=[0], verbose=False)[0]
+        return self._parse(r)
+
+    def extract_keypoints(self, frame, bbox=None):
+        """
+        Backward-compatible: returns keypoints for the largest person, or None.
+        bbox is accepted but ignored (detection is built in now).
+        """
+        people = self.detect_all(frame)
+        if not people:
+            return None
+        largest = max(people, key=lambda p: (p['bbox'][2] - p['bbox'][0]) *
+                                            (p['bbox'][3] - p['bbox'][1]))
+        return largest['kp']
+
+    def draw(self, frame, person, color=None, label=None):
+        """Draw one person's box and skeleton. person = dict from detect_all/track_all."""
+        x1, y1, x2, y2 = person['bbox']
+        color = color or (0, 255, 0)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+
+        h, w = frame.shape[:2]
+        kp = person['kp']
+        for a, b in SKELETON:
+            if kp[a][3] < 0.4 or kp[b][3] < 0.4:
+                continue
+            pa = (int(kp[a][0] * w), int(kp[a][1] * h))
+            pb = (int(kp[b][0] * w), int(kp[b][1] * h))
+            cv2.line(frame, pa, pb, (0, 0, 255), 2)
+
+        if label:
+            cv2.putText(frame, label, (x1, y1 - 8),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+        return frame
+
+
+if __name__ == "__main__":
+    import sys
+    src = sys.argv[1] if len(sys.argv) > 1 else 0
+    pose = PoseEstimator()
+    cap = cv2.VideoCapture(src)
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        people = pose.detect_all(frame)
+        for i, p in enumerate(people):
+            pose.draw(frame, p, label=f"P{i} {p['conf']:.2f}")
+        cv2.putText(frame, f"detections: {len(people)}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                    (0, 0, 255) if not people else (255, 255, 255), 2)
+        cv2.imshow('AquaGuard pose', frame)
+        if cv2.waitKey(30) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
