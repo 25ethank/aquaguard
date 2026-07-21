@@ -67,7 +67,7 @@ class PoseEstimator:
 
     def detect_all(self, frame):
         """All people in frame, with keypoints. Used by extraction."""
-        r = self.model(frame, classes=[0], verbose=False)[0]
+        r = self.model(frame, classes=[0], verbose=True)[0]
         return self._parse(r)
 
     def extract_keypoints(self, frame, bbox=None):
@@ -83,7 +83,7 @@ class PoseEstimator:
         return largest['kp']
 
     def draw(self, frame, person, color=None, label=None):
-        """Draw one person's box and skeleton. person = dict from detect_all/track_all."""
+        """Draw one person's box and skeleton. person = dict from detect_all"""
         x1, y1, x2, y2 = person['bbox']
         color = color or (0, 255, 0)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)

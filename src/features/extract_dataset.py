@@ -39,11 +39,9 @@ def process_segment(video_path, start_frame, end_frame, label, pose, fe):
         if not ret:
             break
 
-        boxes = detector.detect(frame)
-        if boxes:
-            kp = pose.extract_keypoints(frame)
-            if kp is not None:
-                buffer.append(kp)
+        kp = pose.extract_keypoints(frame)
+        if kp is not None:
+            buffer.append(kp)
 
         if len(buffer) >= WINDOW:
             feats = fe.extract_features(buffer[:WINDOW])
@@ -65,7 +63,7 @@ if __name__ == "__main__":
     for _, r in labels.iterrows():
         path = f"data/raw_videos/{r['video_file']}"
         print(f"Processing {r['video_file']} [{r['start_frame']} - {r['end_frame']}] as {r['label']}")
-        rows = process_segment(path, int(r['start_frame']), int(r['end_frame']), r['label'], detector, pose, fe)
+        rows = process_segment(path, int(r['start_frame']), int(r['end_frame']), r['label'], pose, fe)
         print(f"{len(rows)} samples")
         all_rows.extend(rows)
 
