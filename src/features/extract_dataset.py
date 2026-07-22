@@ -7,14 +7,14 @@ sys.path.append('.')
 from src.detection.yolo_pose_estimator import PoseEstimator
 from src.features.feature_engineer import FeatureEngineer
 
-WINDOW = 60
+WINDOW = 90
 STRIDE = 15
 
 def process_segment(video_path, start_frame, end_frame, label, pose, fe):
     """
     Processes one labeled video segment into training samples.
 
-    Runs detection + pose estimation frame by frame, then slides a 60-frame window (stride 15)
+    Runs detection + pose estimation frame by frame, then slides a 90-frame window (stride 15)
     across buffered keypoints to extract overlapping feature vectors
 
     Args:
