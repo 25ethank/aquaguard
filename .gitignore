@@ -223,4 +223,5 @@ __marimo__/
 *.mov
 *.avi
 *.DS_Store
+*.pkl
 data/raw_videos/
