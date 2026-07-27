@@ -51,3 +51,14 @@ def predict(s: Sample):
         }
     except Exception as e:
         raise HTTPException(500, str(e))
+
+@app.post("/incidents")
+def log_incident(inc: dict):
+    inc['logged_at'] = datetime.datetime.now().isoformat()
+    incidents.append(inc)
+    return {"total": len(incidents)}
+
+
+@app.get("/incidents")
+def get_incidents():
+    return {"incidents": incidents, "total": len(incidents)}
