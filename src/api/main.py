@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 import pickle
 import numpy as np
 import datetime
@@ -16,7 +16,7 @@ incidents = []
 
 class Sample(BaseModel):
     person_id: str
-    features: List[float]
+    features: List[Optional[float]]
     timestamp: str
 
 @app.get("/health")
@@ -39,7 +39,7 @@ def predict(s: Sample):
         raise HTTPException(400,
             f"Expected {len(feature_names)} features, got {len(s.features)}")
     try:
-        x = np.array(s.features, dtype=float).reshape(1, -1)
+        x = np.array([np.nan if v is None else v for v in s.features], dtype=float).reshape(1, -1)
         proba = model.predict_proba(x)[0]
         idx = int(np.argmax(proba))
         return {
