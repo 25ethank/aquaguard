@@ -70,32 +70,10 @@ class PoseEstimator:
         r = self.model(frame, classes=[0], verbose=True)[0]
         return self._parse(r)
 
-    def track(self, frame):
-        """Detection + pose + ByteTrack. Returns dicts with persistent track_id."""
+    def track_all(self, frame):
         r = self.model.track(frame, classes=[0], persist=True,
                              tracker='bytetrack.yaml', verbose=False)[0]
-
-        out = []
-        if r.keypoints is None or r.boxes is None or len(r.boxes) == 0:
-            return out
-
-        ids = r.boxes.id.int().tolist() if r.boxes.id is not None else None
-
-        for i in range(len(r.boxes)):
-            conf = float(r.boxes.conf[i].item())
-            if conf < self.conf_threshold:
-                continue
-            bbox = [int(v) for v in r.boxes.xyxy[i].tolist()]
-            xy = r.keypoints.xyn[i].cpu().numpy()
-            kconf = r.keypoints.conf[i].cpu().numpy()
-            z = np.zeros((len(xy), 1))
-            kp = np.concatenate([xy, z, kconf[:, None]], axis=1)
-
-            entry = {'bbox': bbox, 'conf': conf, 'kp': kp}
-            if ids is not None:
-                entry['track_id'] = ids[i]
-            out.append(entry)
-        return out
+        return self._parse(r, frame.shape, with_ids=True)
 
     def extract_keypoints(self, frame, bbox=None):
         """
