@@ -85,3 +85,43 @@ class AquaGuard:
                 print(f"Feature mismatch: {r.json().get('detail')}")
         except requests.RequestException:
             pass
+
+    def _check_alert(self, key):
+        label, conf = self.risk.get(key, ('...', 0.0))
+        if label in SUSTAIN and conf > ALERT_THRESHOLD:
+            self.counters[key] += 1
+            if self.counters[key] >= SUSTAIN[label]:
+                self._alert(key, label, conf)
+                self.counters[key] = 0
+        else:
+            self.counters[key] = 0
+
+    def _draw(self, frame, bbox, key):
+        label, conf = self.risk.get(key, ('...', 0.0))
+        danger = label in ('distress', 'drowning')
+        if danger and conf > ALERT_THRESHOLD:
+            color = (0, 0, 255)
+        elif danger:
+            color = (0, 165, 255)
+        else:
+            color = (0, 255, 0)
+
+        x1, y1, x2, y2 = bbox
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(frame, f"{key} {label} {conf:.0%}", (x1, max(y1 - 8, 15)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+
+    def _alert(self, key, label, conf):
+        kind = ("MOTIONLESS SWIMMER - possible unconcious victim"
+                if label == 'drowning' else "ACTIVE STRUGGLE - swimmer in distress")
+        ts = datetime.datetime.now().isoformat(timespec='seconds')
+        print(f"\n*** ALERT {ts} | {kind} | {key} | {conf:.0%} ***\n")
+        try:
+            requests.post(f"{API}/incidents", timeout = 0.5, json={
+                "person_id": key, "label": label, "confidence": conf,
+                "alert_type": kind, "timestamp": ts})
+        except requests.RequestException:
+            pass
+
+if __name__ == "__main__":
+    src = sys.argv[1] if len(sys.argv) > 1 else 0
+    AquaGuard(source=src).run()
