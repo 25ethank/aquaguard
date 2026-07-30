@@ -44,10 +44,10 @@ The pipeline runs in stages:
 - [x] YOLOv8 detection pipeline working
 - [x] MediaPipe pose estimation integrated
 - [x] Multi-person tracking
-- [ ] Dataset collection and labeling
-- [ ] Feature engineering
-- [ ] Model training
-- [ ] FastAPI backend
+- [x] Dataset collection and labeling
+- [x] Feature engineering
+- [x] Model training
+- [x] FastAPI backend
 - [ ] Alerts and logging
 - [ ] Dashboard
 - [ ] Deployment
