@@ -69,3 +69,19 @@ class AquaGuard:
         cap.release()
         cv2.destroyAllWindows()
         print(f"\nDone. {frames} frames at {frames/max(time.time()-t0, 1e-6):.1f} FPS avg")
+
+    def _predict(self, key):
+        feats = self.fe.extract_features(list(self.buffers[key]))
+        vec = [None if (isinstance(v, float) and np.isnan(v)) else float(v) for v in feats.values()]
+        try:
+            r = requests.post(f"{API}/predict", timeout=0.15, json={
+                "person_id": key,
+                "features": vec,
+                "timestamp": datetime.datetime.now().isoformat()})
+            if r.ok:
+                res = r.json()
+                self.risk[key] = (res['label'], res['confidence'])
+            elif r.status_code == 400:
+                print(f"Feature mismatch: {r.json().get('detail')}")
+        except requests.RequestException:
+            pass
