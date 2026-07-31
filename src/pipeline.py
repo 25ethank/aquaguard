@@ -18,7 +18,7 @@ ALERT_THRESHOLD = 0.85
 WINDOW = 60
 
 class AquaGuard:
-    def __init__(self, source=0, model_name='yolo26s-pose.pt'):
+    def __init__(self, source=0, model_name='yolo26n-pose.pt'):
         self.det = PoseEstimator(model_name=model_name)
         self.fe = FeatureEngineer()
         self.source = source
@@ -51,8 +51,9 @@ class AquaGuard:
                     continue
                 key = f"P{tid}"
                 self.buffers[key].append(d['kp'])
+                print(f"{key}: buffer {len(self.buffers[key])}/{WINDOW}")
 
-                if len(self.buffers[key]) == WINDOW:
+                if len(self.buffers[key]) >= 20:
                     self._predict(key)
                     self._check_alert(key)
 
@@ -81,6 +82,7 @@ class AquaGuard:
             if r.ok:
                 res = r.json()
                 self.risk[key] = (res['label'], res['confidence'])
+                print(f"{key}: {res['label']} {res['confidence']:.2f} | {res['proba']}")
             elif r.status_code == 400:
                 print(f"Feature mismatch: {r.json().get('detail')}")
         except requests.RequestException:

@@ -73,7 +73,7 @@ class PoseEstimator:
     def track_all(self, frame):
         r = self.model.track(frame, classes=[0], persist=True,
                              tracker='bytetrack.yaml', verbose=False)[0]
-        return self._parse(r, frame.shape, with_ids=True)
+        return self._parse(r, with_ids=True)
 
     def extract_keypoints(self, frame, bbox=None):
         """
