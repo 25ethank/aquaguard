@@ -18,8 +18,8 @@ ALERT_THRESHOLD = 0.85
 WINDOW = 60
 
 class AquaGuard:
-    def __init__(self, source=0, model_name='yolo26m-pose.pt'):
-        self.det = PoseEstimator(model_name=model_name)
+    def __init__(self, source=0, model_name='yolo26n-pose.pt'):
+        self.det = PoseEstimator(model_name=model_name, conf_threshold=0.2)
         self.fe = FeatureEngineer()
         self.source = source
         self.buffers = defaultdict(lambda: deque(maxlen=WINDOW))
