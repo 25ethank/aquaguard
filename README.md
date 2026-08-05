@@ -15,20 +15,18 @@ I've been a competitive swimmer and water polo player for 10+ years and certifie
 
 The pipeline runs in stages:
 
-1. **YOLOv8** detects every person in the frame and draws a bounding box around each one
+1. **YOLO26** detects every person in the frame, draws a bounding box around each one, and estimates their pose
 2. **ByteTrack** assigns a persistent ID to each swimmer across frames so the same person stays Person_1 throughout the video
-3. **MediaPipe** extracts 33 body keypoints (joint positions) for each tracked swimmer
-4. A **sliding window** collects 90 frames (~3 seconds) of keypoints per person
-5. **Feature engineering** converts raw keypoints into meaningful signals — body angle, arm symmetry, head position over time, wrist height relative to shoulders
-6. An **LSTM classifier** analyzes the 3-second window and outputs a drowning confidence score
-7. If confidence stays above 85% for 3 consecutive seconds, the system triggers a **Twilio SMS alert** to the lifeguard and logs the incident to **Firebase**
+3. A **sliding window** collects 90 frames (~3 seconds) of keypoints per person
+4. **Feature engineering** converts raw keypoints into meaningful signals — body angle, arm symmetry, head position over time, wrist height relative to shoulders
+5. An **LSTM classifier** analyzes the 3-second window and outputs a drowning confidence score
+6. If confidence stays above 85% for 3 consecutive seconds, the system triggers a **Twilio SMS alert** to the lifeguard and logs the incident to **Firebase**
 
 ---
 
 ## Stack
 
-- YOLOv8 — person detection
-- MediaPipe Tasks API — pose estimation
+- YOLO26 — person detection and pose estimation
 - PyTorch — LSTM model
 - scikit-learn — Random Forest baseline
 - FastAPI — ML model serving
@@ -42,7 +40,6 @@ The pipeline runs in stages:
 ## Progress
 
 - [x] YOLOv8 detection pipeline working
-- [x] MediaPipe pose estimation integrated
 - [x] Multi-person tracking
 - [x] Dataset collection and labeling
 - [x] Feature engineering
