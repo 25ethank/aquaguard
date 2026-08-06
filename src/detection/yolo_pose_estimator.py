@@ -25,6 +25,17 @@ SKELETON = [
     (12, 14), (14, 16),                 # right leg
 ]
 
+def is_plausible_person(bbox, frame_shape, min_area_ratio=0.008,
+                        min_aspect=0.25, max_aspect=4.0):
+    """Reject boxes too small or oddly shaped to be a whole swimmer."""
+    x1, y1, x2, y2 = bbox
+    w, h = x2 - x1, y2 - y1
+    if w <= 0 or h <= 0:
+        return False
+    fh, fw = frame_shape[:2]
+    if (w * h) / (fw * fh) < min_area_ratio:
+        return False
+    return min_aspect <= h / w <= max_aspect
 class PoseEstimator:
     """
     Unified detection + pose via YOLO-pose. One model, one pass.
@@ -64,6 +75,7 @@ class PoseEstimator:
             people.append(person)
 
         return people
+
 
     def detect_all(self, frame):
         """All people in frame, with keypoints. Used by extraction."""
