@@ -7,7 +7,7 @@ import numpy as np
 from collections import defaultdict, deque
 
 sys.path.append('.')
-from src.detection.yolo_pose_estimator import PoseEstimator
+from src.detection.yolo_pose_estimator import PoseEstimator, is_plausible_person
 from src.features.feature_engineer import FeatureEngineer
 
 API = "http://localhost:8000"
@@ -43,7 +43,8 @@ class AquaGuard:
                 break
             frames += 1
 
-            people = self._track(frame)
+            people = [p for p in self._track(frame)
+                      if is_plausible_person(p['bbox'], frame.shape)]
 
             for d in people:
                 tid = d.get('track_id')
