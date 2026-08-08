@@ -51,4 +51,16 @@ The pipeline runs in stages:
 
 ---
 
+## Known Limitations
+
+- **Camera geometry dependence** — features are computed in the image plane, so
+  body angle assumes a roughly side-on view. Overhead footage inverts the signal.
+- **Detection on submerged swimmers** — COCO-trained detectors are unreliable on
+  partially submerged people, causing track churn. Mitigated with plausibility
+  filtering and tuned ByteTrack parameters; fine-tuning on aquatic data is planned.
+- **Passive drowning** — detected via stillness rather than motion patterns;
+  currently the weakest class due to limited training data.
+
+---
+
 *Ethan Kim — MIT EECS '29*
