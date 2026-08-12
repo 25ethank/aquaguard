@@ -39,15 +39,18 @@ The pipeline runs in stages:
 
 ## Progress
 
-- [x] YOLOv8 detection pipeline working
-- [x] Multi-person tracking
-- [x] Dataset collection and labeling
+- [x] YOLO detection pipeline
+- [x] Pose estimation (migrated to YOLO-pose)
+- [x] Multi-person tracking (ByteTrack)
 - [x] Feature engineering
-- [x] Model training
+- [x] Dataset collection and labeling
+- [x] Model training (Random Forest, 96% test accuracy)
 - [x] FastAPI backend
+- [x] Real-time pipeline
+- [ ] Detector fine-tuning on aquatic data
 - [ ] Alerts and logging
 - [ ] Dashboard
-- [ ] Deployment
+- [ ] Demo video
 
 ---
 
