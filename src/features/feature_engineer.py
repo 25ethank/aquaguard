@@ -20,7 +20,7 @@ class FeatureEngineer:
 
     def extract_features(self, keypoint_sequence):
         """
-        Takes a sequence of pose keypoints arrays (window_size x 33 x 3)
+        Takes a sequence of pose keypoints arrays (window_size x 17 x 4)
         Returns a feature vector for ML classification
         """
         features = {}
