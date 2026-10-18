@@ -115,8 +115,5 @@ tests/                          # unit + end-to-end tests on synthetic swimmers
 - [x] Real-time pipeline with sustained-alert policy
 - [x] SQLite incident logging + Twilio SMS
 - [x] Streamlit dashboard
-- [ ] Fine-tune pose model on aquatic footage
-- [ ] Temporal model (LSTM / 1D-CNN) over raw keypoint sequences
-- [ ] Docker deployment
 
 *Ethan Kim · MIT EECS '29*
