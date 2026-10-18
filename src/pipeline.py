@@ -1,128 +1,189 @@
-import cv2
+"""
+Real-time AquaGuard pipeline.
+
+  frame -> YOLO-pose + ByteTrack -> plausibility filter -> per-track keypoint buffer
+        -> features -> POST /predict -> AlertPolicy -> POST /incidents (-> SMS)
+
+Usage:
+  python src/pipeline.py data/raw_videos/clip.mp4
+  python src/pipeline.py 0                       # webcam
+  python src/pipeline.py clip.mp4 --out demo.mp4 --headless
+"""
+import argparse
+import datetime
 import sys
 import time
-import datetime
+from collections import deque
+from dataclasses import dataclass, field
+
+import cv2
 import requests
-import numpy as np
-from collections import defaultdict, deque
 
 sys.path.append('.')
+from src import config
+from src.alerts.policy import AlertPolicy
 from src.detection.yolo_pose_estimator import PoseEstimator, is_plausible_person
 from src.features.feature_engineer import FeatureEngineer
 
-API = "http://localhost:8000"
-FPS = 30
-SUSTAIN = {'distresss': 3 * FPS,
-           'drowning': 2 * FPS}
-ALERT_THRESHOLD = 0.85
-WINDOW = 60
+ALERT_TEXT = {
+    'drowning': "MOTIONLESS SWIMMER - possible unconscious victim",
+    'distress': "ACTIVE STRUGGLE - swimmer in distress",
+}
+
+
+@dataclass
+class Track:
+    buffer: deque = field(default_factory=lambda: deque(maxlen=config.WINDOW))
+    age: int = 0                 # frames this ID has been seen
+    last_seen: int = 0           # frame index
+    last_pred: int = -10**9      # frame index of last prediction
+    label: str = '...'
+    conf: float = 0.0
+    danger: float = 0.0          # P(distress) + P(drowning)
+    proba: dict = field(default_factory=dict)
+
 
 class AquaGuard:
-    def __init__(self, source=0, model_name='yolo26n-pose.pt'):
-        self.det = PoseEstimator(model_name=model_name, conf_threshold=0.2)
-        self.fe = FeatureEngineer()
+    def __init__(self, source=0, model_name=config.POSE_MODEL, api=config.API_URL):
+        self.det = PoseEstimator(model_name=model_name, conf_threshold=config.CONF_THRESHOLD)
         self.source = source
-        self.buffers = defaultdict(lambda: deque(maxlen=WINDOW))
-        self.counters = defaultdict(int)
-        self.risk = {}
-        self.alerted = set()
-        self._track = getattr(self.det, 'track_all')
+        self.api = api
+        self.http = requests.Session()
+        self.tracks = {}
+        self.policy = AlertPolicy()
+        self.fe = None   # created once we know the source fps
 
-    def run(self):
+    # ---------------------------------------------------------------- main loop
+    def run(self, out_path=None, headless=False):
         cap = cv2.VideoCapture(self.source)
         if not cap.isOpened():
             print(f"Could not open source: {self.source}")
             return
+        fps = cap.get(cv2.CAP_PROP_FPS) or config.FPS
+        if fps < 1 or fps > 240:
+            fps = config.FPS
+        self.fe = FeatureEngineer(fps=fps)
 
-        t0, frames = time.time(), 0
-        print("Running. Press q to quit.")
+        writer = None
+        if out_path:
+            w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            writer = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+
+        self._check_api()
+        t0, n = time.time(), 0
+        print("Running. Press q to quit." if not headless else "Running headless.")
 
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            frames += 1
+            t_video = n / fps
 
-            people = [p for p in self._track(frame)
-                      if is_plausible_person(p['bbox'], frame.shape)]
+            people = [p for p in self.det.track_all(frame)
+                      if p.get('track_id') is not None
+                      and is_plausible_person(p['bbox'], frame.shape)]
 
-            for d in people:
-                tid = d.get('track_id')
-                if tid is None:
-                    continue
-                key = f"P{tid}"
-                self.buffers[key].append(d['kp'])
+            for p in people:
+                key = f"P{p['track_id']}"
+                tr = self.tracks.setdefault(key, Track())
+                tr.age += 1
+                tr.last_seen = n
+                if tr.age < config.MIN_TRACK_AGE:
+                    continue          # junk tracks (splashes, reflections) die before here
+                tr.buffer.append(p['kp'])
 
-                if len(self.buffers[key]) >= 20:
-                    self._predict(key)
-                    self._check_alert(key)
+                if (len(tr.buffer) >= config.MIN_FILL
+                        and n - tr.last_pred >= config.PREDICT_EVERY):
+                    tr.last_pred = n
+                    self._predict(key, tr)
+                    alert = self.policy.update(key, tr.proba, t_video)
+                    if alert:
+                        self._alert(alert)
 
-                self._draw(frame, d['bbox'], key)
+                self._draw(frame, p['bbox'], key, tr)
 
-            fps_now = frames / max(time.time() - t0, 1e-6)
-            cv2.putText(frame, f"AquaGuard | {fps_now:.1f} FPS | {len(people)} tracked",
+            self._purge(n)
+            n += 1
+            live_fps = n / max(time.time() - t0, 1e-6)
+            cv2.putText(frame, f"AquaGuard | {live_fps:.1f} FPS | {len(people)} tracked",
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            cv2.imshow('AquaGuard', frame)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if writer:
+                writer.write(frame)
+            if not headless:
+                cv2.imshow('AquaGuard', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
 
         cap.release()
+        if writer:
+            writer.release()
         cv2.destroyAllWindows()
-        print(f"\nDone. {frames} frames at {frames/max(time.time()-t0, 1e-6):.1f} FPS avg")
+        print(f"\nDone. {n} frames at {n / max(time.time() - t0, 1e-6):.1f} FPS avg")
 
-    def _predict(self, key):
-        feats = self.fe.extract_features(list(self.buffers[key]))
-        vec = [None if (isinstance(v, float) and np.isnan(v)) else float(v) for v in feats.values()]
+    # ---------------------------------------------------------------- helpers
+    def _check_api(self):
         try:
-            r = requests.post(f"{API}/predict", timeout=0.15, json={
+            h = self.http.get(f"{self.api}/health", timeout=2).json()
+            print(f"API ok: {h['n_features']} features, classes {h['classes']}")
+        except Exception as e:
+            print(f"WARNING: API not reachable at {self.api} ({e}). "
+                  f"Start it with: uvicorn src.api.main:app")
+
+    def _predict(self, key, tr):
+        feats = self.fe.extract_features(list(tr.buffer))
+        try:
+            r = self.http.post(f"{self.api}/predict", timeout=0.3, json={
                 "person_id": key,
-                "features": vec,
+                "features": FeatureEngineer.to_vector(feats),
                 "timestamp": datetime.datetime.now().isoformat()})
             if r.ok:
                 res = r.json()
-                self.risk[key] = (res['label'], res['confidence'])
-            elif r.status_code == 400:
+                tr.label, tr.conf, tr.proba = res['label'], res['confidence'], res['proba']
+                tr.danger = self.policy.danger(tr.proba)[0]
+            elif r.status_code in (400, 422):
                 print(f"Feature mismatch: {r.json().get('detail')}")
         except requests.RequestException:
             pass
 
-    def _check_alert(self, key):
-        label, conf = self.risk.get(key, ('...', 0.0))
-        if label in SUSTAIN and conf > ALERT_THRESHOLD:
-            self.counters[key] += 1
-            if self.counters[key] >= SUSTAIN[label]:
-                self._alert(key, label, conf)
-                self.counters[key] = 0
-        else:
-            self.counters[key] = 0
-
-    def _draw(self, frame, bbox, key):
-        label, conf = self.risk.get(key, ('...', 0.0))
-        danger = label in ('distress', 'drowning')
-        if danger and conf > ALERT_THRESHOLD:
-            color = (0, 0, 255)
-        elif danger:
-            color = (0, 165, 255)
-        else:
-            color = (0, 255, 0)
-
-        x1, y1, x2, y2 = bbox
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(frame, f"{key} {label} {conf:.0%}", (x1, max(y1 - 8, 15)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
-
-    def _alert(self, key, label, conf):
-        kind = ("MOTIONLESS SWIMMER - possible unconcious victim"
-                if label == 'drowning' else "ACTIVE STRUGGLE - swimmer in distress")
+    def _alert(self, a):
+        kind = ALERT_TEXT[a['label']]
         ts = datetime.datetime.now().isoformat(timespec='seconds')
-        print(f"\n*** ALERT {ts} | {kind} | {key} | {conf:.0%} ***\n")
+        print(f"\n*** ALERT {ts} | {kind} | {a['person_id']} | "
+              f"{a['confidence']:.0%} for {a['sustained_s']}s ***\n")
         try:
-            requests.post(f"{API}/incidents", timeout = 0.5, json={
-                "person_id": key, "label": label, "confidence": conf,
-                "alert_type": kind, "timestamp": ts})
+            self.http.post(f"{self.api}/incidents", timeout=1.0, json={
+                **a, "alert_type": kind, "timestamp": ts,
+                "source": str(self.source)})
         except requests.RequestException:
             pass
 
+    def _purge(self, n):
+        """Forget tracks that haven't been seen recently so state doesn't grow forever."""
+        for key in [k for k, t in self.tracks.items() if n - t.last_seen > config.STALE_AFTER]:
+            del self.tracks[key]
+            self.policy.forget(key)
+
+    def _draw(self, frame, bbox, key, tr):
+        if tr.danger >= config.ALERT_THRESHOLD:
+            color = (0, 0, 255)
+        elif tr.danger >= 0.5:
+            color = (0, 165, 255)
+        else:
+            color = (0, 255, 0)
+        x1, y1, x2, y2 = bbox
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(frame, f"{key} {tr.label} {tr.conf:.0%}", (x1, max(y1 - 8, 15)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+
+
 if __name__ == "__main__":
-    src = sys.argv[1] if len(sys.argv) > 1 else 0
-    AquaGuard(source=src).run()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('source', nargs='?', default='0')
+    ap.add_argument('--out', help='save annotated video (for your demo GIF)')
+    ap.add_argument('--headless', action='store_true')
+    ap.add_argument('--model', default=config.POSE_MODEL)
+    args = ap.parse_args()
+    src = int(args.source) if args.source.isdigit() else args.source
+    AquaGuard(source=src, model_name=args.model).run(out_path=args.out, headless=args.headless)
