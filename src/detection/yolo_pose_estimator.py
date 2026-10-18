@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
+TRACKER_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bytetrack_pool.yaml')
+
 # COCO-17 keypoint indices
 NOSE = 0
 LEFT_EYE, RIGHT_EYE = 1, 2
@@ -36,6 +38,8 @@ def is_plausible_person(bbox, frame_shape, min_area_ratio=0.008,
     if (w * h) / (fw * fh) < min_area_ratio:
         return False
     return min_aspect <= h / w <= max_aspect
+
+
 class PoseEstimator:
     """
     Unified detection + pose via YOLO-pose. One model, one pass.
@@ -79,12 +83,13 @@ class PoseEstimator:
 
     def detect_all(self, frame):
         """All people in frame, with keypoints. Used by extraction."""
-        r = self.model(frame, classes=[0], verbose=True)[0]
+        r = self.model(frame, classes=[0], verbose=False)[0]
         return self._parse(r)
 
     def track_all(self, frame):
+        """All people in frame with persistent ByteTrack IDs. Used by the live pipeline."""
         r = self.model.track(frame, classes=[0], persist=True,
-                             tracker='src/detection/bytetrack_pool.yaml', verbose=False)[0]
+                             tracker=TRACKER_CFG, verbose=False)[0]
         return self._parse(r, with_ids=True)
 
     def extract_keypoints(self, frame, bbox=None):
