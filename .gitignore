@@ -7,3 +7,4 @@ data/incidents.db
 runs/
 *.pt
 .pytest_cache/
+demo.mp4
