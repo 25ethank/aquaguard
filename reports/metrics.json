@@ -1,0 +1,77 @@
+{
+  "n_windows": 295,
+  "n_videos": 19,
+  "classes": [
+    "distress",
+    "drowning",
+    "normal"
+  ],
+  "window_frames": 90,
+  "cv_folds": 4,
+  "report": {
+    "distress": {
+      "precision": 0.805,
+      "recall": 0.9757575757575757,
+      "f1-score": 0.8821917808219178,
+      "support": 165.0
+    },
+    "drowning": {
+      "precision": 0.9375,
+      "recall": 0.6122448979591837,
+      "f1-score": 0.7407407407407407,
+      "support": 98.0
+    },
+    "normal": {
+      "precision": 0.9032258064516129,
+      "recall": 0.875,
+      "f1-score": 0.8888888888888888,
+      "support": 32.0
+    },
+    "accuracy": 0.8440677966101695,
+    "macro avg": {
+      "precision": 0.8819086021505377,
+      "recall": 0.8210008245722532,
+      "f1-score": 0.837273803483849,
+      "support": 295.0
+    },
+    "weighted avg": {
+      "precision": 0.8596719518862768,
+      "recall": 0.8440677966101695,
+      "f1-score": 0.8359277317717069,
+      "support": 295.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      161,
+      4,
+      0
+    ],
+    [
+      35,
+      60,
+      3
+    ],
+    [
+      4,
+      0,
+      28
+    ]
+  ],
+  "feature_importances": {
+    "wrist_above_shoulder_ratio": 0.2464,
+    "body_angle_mean": 0.179,
+    "body_vertical_ratio": 0.1679,
+    "arm_spread_ratio": 0.11,
+    "arm_symmetry": 0.066,
+    "leg_activity": 0.0424,
+    "head_y_std": 0.0372,
+    "head_y_mean": 0.037,
+    "vertical_bobbing_hz": 0.0335,
+    "body_angle_std": 0.0303,
+    "left_wrist_freq_hz": 0.0239,
+    "right_wrist_freq_hz": 0.0122,
+    "vertical_velocity": 0.0095,
+    "head_y_trend": 0.0048
+  }
+}
