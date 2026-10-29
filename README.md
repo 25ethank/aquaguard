@@ -4,7 +4,7 @@ AquaGuard watches pool video and alerts when a swimmer shows signs of distress o
 
 The feature set comes from four years of lifeguarding. Real drowning rarely looks like the splashing and shouting people expect. The instinctive drowning response is upright, silent and short, with arms pressing down at the surface and almost no kick. Each feature here encodes one of those cues.
 
-<!-- Add your demo: python src/pipeline.py clip.mp4 --out demo.mp4, then convert to GIF -->
+![AquaGuard demo](demo.gif)
 
 ## Architecture
 
